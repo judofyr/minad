@@ -1,0 +1,127 @@
+<html>
+<head>
+  <title>Is Daniel Mendler Rockin' it?</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+  <script>
+    var minadData = {};
+
+function reloadCSS() {
+  var links = document.getElementsByTagName('link');
+  for (var i = 0; i < links.length; i++) {
+    var l = links[i];
+    if (l.rel == 'stylesheet' || l.type == 'text/css') {
+      var rand_n = 'css_buster_' + Math.floor(Math.random() * 1000000000);
+
+      var splitted = l.href.split('?', 2);
+
+      var new_query_string;
+
+      // Does it already have a query string?
+      if (splitted.length > 1) {
+        // does it have params or just a cache buster
+        var has_amp = splitted[1].indexOf('&') == -1; // is it a query string? 
+        // if it's just a cache buster, swap it out
+        if (has_amp) {
+          new_query_string = rand_n;
+        } else {
+          new_query_string = splitted[1] + '&' + rand_n;
+        }
+      } else {
+        new_query_string = rand_n;
+      }
+
+      l.href = splitted[0] + '?' + new_query_string;
+    }
+  }
+}
+    
+
+    function getThing(repo) {
+      var thing = minadData[repo.url];
+      if (!thing) {
+        thing = {
+          fullname: repo.owner + '/' + repo.name,
+          description: repo.description,
+          url: repo.url,
+          commits: 0,
+          comments: 0,
+          opened_issues: 0,
+          closed_issues: 0,
+          pull_requests: 0,
+          closed_pull_requests: 0
+        }
+        minadData[repo.url] = thing;
+      }
+      return thing;
+    }
+
+    function h(name, html, obj) {
+      return $('<' + name + '>', $.extend({ html: html }, obj));
+    }
+
+    function w(name, html) {
+      return '<' + name + '>' + html + '</' + name + '>';
+    }
+
+    function presentData() {
+      var c = $('#content').empty();
+      var p = 0;
+      for (var key in minadData) {
+        if (key.match('http://')) {
+          p += 1;
+          var thing = minadData[key];
+          var link = h('a', thing.fullname, { href: thing.url }).wrap("<div>").parent().html();
+          h('h2', link + ' ' + w('em', thing.description)).appendTo(c);
+          h('p', w('strong', thing.commits) + ' commits').appendTo(c);
+          h('p', w('strong', thing.comments) + ' commit comments').appendTo(c);
+          h('p', w('strong', thing.opened_issues) + ' reported issues').appendTo(c);
+          h('p', w('strong', thing.closed_issues) + ' closed issues').appendTo(c);
+          h('p', w('strong', thing.pull_requests) + ' pull requests').appendTo(c);
+        }
+      }
+      h('p', "He's been working on " + w('strong', p + ' projects') + ' recently:').prependTo(c);
+      h('hr').appendTo(c);
+      h('p', "I think it's fair to say that...").appendTo(c);
+      h('h3', "Daniel Mendler is <em>definitely</em> rockin' it!").appendTo(c);
+    }
+
+    $(function() {
+      $.getJSON('http://github.com/minad.json?callback=?', function(data) {
+        $.each(data, function() {
+          if (this.type == "WatchEvent") { return }
+          var thing = getThing(this.repository);
+          switch (this.type) {
+            case "PushEvent":
+              thing.commits += this.payload.size;
+              break;
+            case "CommitCommentEvent":
+              thing.comments += 1;
+              break;
+            case "IssuesEvent":
+              if (thing.action == "opened") {
+                thing.opened_issues += 1;
+              } else {
+                thing.closed_issues += 1;
+              }
+              break;
+            case "PullRequestEvent":
+              if (thing.action == "closed") {
+                thing.closed_pull_requests += 1;
+              } else {
+                thing.pull_requests += 1;
+              }
+              break;
+          }
+        });
+
+        presentData();
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>Is <a href="http://github.com/minad">Daniel Mendler</a> Rockin' it?</h1>
+  <div id="content"><p>Loading...</p></div>
+</body>
+</html>
