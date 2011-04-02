@@ -68,7 +68,7 @@ function reloadCSS() {
       var c = $('#content').empty();
       var p = 0;
       for (var key in minadData) {
-        if (key.match('http://')) {
+        if (key.match('https://')) {
           p += 1;
           var thing = minadData[key];
           var link = h('a', thing.fullname, { href: thing.url }).wrap("<div>").parent().html();
@@ -87,7 +87,7 @@ function reloadCSS() {
     }
 
     $(function() {
-      $.getJSON('http://github.com/minad.json?callback=?', function(data) {
+      $.getJSON('https://github.com/minad.json?callback=?', function(data) {
         $.each(data, function() {
           if (this.type == "WatchEvent") { return }
           var thing = getThing(this.repository);
